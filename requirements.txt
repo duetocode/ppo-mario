@@ -1,0 +1,13 @@
+numpy~=1.26.4
+torch~=2.3.1
+torchvision~=0.18.1
+matplotlib~=3.8.4
+gymnasium~=0.29.1
+nes_py @ git+https://github.com/duetocode/nes-py.git@v9.2.0
+gym_super_mario_bros @ git+https://github.com/duetocode/gym-super-mario-bros.git@v8.1.0
+matplotlib~=3.8.4
+opencv-python-headless~=4.9.0.80
+tensorboard~=2.16.2
+tqdm~=4.66.4
+stable_baselines3~=2.3.2
+rich~=13.7.1
