@@ -56,7 +56,7 @@ def render(model: PPO, output_file: str | Path, with_attention: bool = False):
         str(output_file),
         cv2.VideoWriter_fourcc(*"mp4v"),
         60.0,
-        (WIDTH * 4, HEIGHT),
+        (WIDTH, HEIGHT),
         True,
     )
 
@@ -69,11 +69,11 @@ def render(model: PPO, output_file: str | Path, with_attention: bool = False):
         # make a prediction
         action, _ = model.predict(obs, deterministic=True)
         # run the value features extractor for its attention map
-        with torch.no_grad():
-            vf_features_extractor(
-                torch.as_tensor(obs[None].transpose(0, 3, 1, 2)).to(model.device)
-                / 255.0
-            )
+        # with torch.no_grad():
+        #     vf_features_extractor(
+        #         torch.as_tensor(obs[None].transpose(0, 3, 1, 2)).to(model.device)
+        #         / 255.0
+        #     )
 
         # step the game
         for _ in range(3):
@@ -87,21 +87,22 @@ def render(model: PPO, output_file: str | Path, with_attention: bool = False):
             screen = cv2.cvtColor(screen, cv2.COLOR_RGB2BGR)
 
             # render the attention views
-            policy_attention = render_attention(
-                screen, model.policy.features_extractor._attention
-            )
-            value_attention = render_attention(screen, vf_features_extractor._attention)
+            # policy_attention = render_attention(
+            #     screen, model.policy.features_extractor._attention
+            # )
+            # value_attention = render_attention(screen, vf_features_extractor._attention)
 
             # create the output screen
-            canvas = np.zeros((HEIGHT, WIDTH * 4, 3), dtype=np.uint8)
+            # canvas = np.zeros((HEIGHT, WIDTH * 4, 3), dtype=np.uint8)
             # draw the screen on the top
-            canvas[:, WIDTH * 0 : WIDTH * 1, :] = screen
-            canvas[:, WIDTH * 1 : WIDTH * 2, :] = policy_attention
-            canvas[:, WIDTH * 2 : WIDTH * 3, :] = value_attention
-            # draw the information
-            draw_info(canvas, info, frame)
+            # canvas[:, WIDTH * 0 : WIDTH * 1, :] = screen
+            # canvas[:, WIDTH * 1 : WIDTH * 2, :] = policy_attention
+            # canvas[:, WIDTH * 2 : WIDTH * 3, :] = value_attention
+            # # draw the information
+            # draw_info(canvas, info, frame)
             # save the frame
-            writer.write(canvas)
+            # writer.write(canvas)
+            writer.write(screen)
 
             frame += 1
 

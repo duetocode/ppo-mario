@@ -23,7 +23,7 @@ def run(model_file: Path):
         cfg = ppo_mario.TrainConfiguration()
         print("Loading model with DEFAULT configuration:")
     # but override the model file
-    cfg.model = str(model_file)
+    cfg.base_model = str(model_file)
     model = ppo_mario.create_model(cfg)
 
     # the output file should place in the same directory as the model
