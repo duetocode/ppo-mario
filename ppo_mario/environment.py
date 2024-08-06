@@ -15,10 +15,11 @@ def create_env(
     with_random_frame_skip: bool = False,
     with_random_episode: bool = True,
     with_mario_reward: bool = True,
+    level: tuple = (4, 1),
 ):
     # the basic environment creation
     env = gym_super_mario_bros.make(
-        "SuperMarioBros-v0", target=(4, 1), render_mode="rgb_array"
+        "SuperMarioBros-v0", target=level, render_mode="rgb_array"
     )
 
     # random episode reset

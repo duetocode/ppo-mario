@@ -16,6 +16,7 @@ class TrainConfiguration:
     total_timesteps: int = 500_000
     normalize_advantage: bool = False
     random_frame_skip: bool = False
+    level: tuple = (4, 1)
 
     def to_json(self) -> str:
         return json.dumps(dc.asdict(self), indent=4)

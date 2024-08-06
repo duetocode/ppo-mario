@@ -37,7 +37,13 @@ def train(work_dir: WorkDir, n_envs: int = None):
 
     # prepare the environment
     venv = SubprocVecEnv(
-        [functools.partial(create_env, with_random_frame_skip=cfg.random_frame_skip)]
+        [
+            functools.partial(
+                create_env,
+                with_random_frame_skip=cfg.random_frame_skip,
+                level=tuple(cfg.level),
+            )
+        ]
         * n_envs,
         start_method=get_sub_process_start_method(),
     )
