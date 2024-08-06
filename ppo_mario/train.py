@@ -1,24 +1,39 @@
-import shutil, os, functools
-from pathlib import Path
-from datetime import datetime
+import os, functools, sys
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor
 from stable_baselines3.common import logger
 from stable_baselines3.common.callbacks import CheckpointCallback
 
-from .misc import copy_preivous_logs, launch_tensorboard, get_sub_process_start_method
+from .misc import WorkDir, get_sub_process_start_method
 
 from .config import TrainConfiguration
 from .environment import create_env
 from .model import create_model
 
 
-def train(cfg: TrainConfiguration, n_envs: int = None):
+def train(work_dir: WorkDir, n_envs: int = None):
+    """Train the model within the given work directory"""
+
+    # check the work directory first
+    if not (
+        work_dir is not None and work_dir.root.exists() and work_dir.config.exists()
+    ):
+        print(
+            "Invalid work directory. Do you properly initialized it?", file=sys.stderr
+        )
+        sys.exit(-10)
+
+    print("Will work in", str(work_dir.root))
+
+    # normalize the n_envs
     n_envs = n_envs if n_envs else os.cpu_count()
+
+    # load the configuration
+    cfg = TrainConfiguration.load(work_dir.config.read_text())
     print(f"Will train {cfg.total_timesteps} steps with {n_envs} processes.")
     print("Configuration:")
-    print(cfg.save())
+    print(cfg.to_json())
 
     # prepare the environment
     venv = SubprocVecEnv(
@@ -31,15 +46,15 @@ def train(cfg: TrainConfiguration, n_envs: int = None):
     print("Action space:", venv.action_space)
 
     # prepare the model
-    model = create_model(cfg, env=venv)
+    model = create_model(cfg, base_model=work_dir.base_model, env=venv)
 
     # setup tensorboard logging
-    model.set_logger(logger.configure(str(cfg.logs_dir), ["tensorboard"]))
+    model.set_logger(logger.configure(str(work_dir.logs), ["tensorboard"]))
 
     # setup the checkpoint callback
     checkpoint_callback = CheckpointCallback(
         save_freq=10_000,
-        save_path=str(cfg.checkpoints_dir),
+        save_path=str(work_dir.checkpoints),
         name_prefix="rl_model",
         save_replay_buffer=False,
         save_vecnormalize=False,
@@ -54,5 +69,6 @@ def train(cfg: TrainConfiguration, n_envs: int = None):
         progress_bar=True,
         reset_num_timesteps=False,
     )
-    model.save(str(cfg.saved_model))
+    model.save(str(work_dir.saved_model))
+    print("Model saved to", str(work_dir.saved_model))
     print("Done")

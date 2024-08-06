@@ -5,9 +5,6 @@ import json
 
 @dc.dataclass
 class TrainConfiguration:
-    work_dir: str
-    base_model: str | None = None
-    device: str | None = None
     batch_size: int = 128
     n_epochs: int = 8
     n_steps: int = 2048
@@ -22,30 +19,6 @@ class TrainConfiguration:
 
     def to_json(self) -> str:
         return json.dumps(dc.asdict(self), indent=4)
-
-    @property
-    def logs_dir(self) -> Path:
-        return Path(self.work_dir, "logs")
-
-    @property
-    def checkpoints_dir(self) -> Path:
-        return Path(self.work_dir, "checkpoints")
-
-    @property
-    def saved_model(self) -> Path:
-        return Path(self.work_dir, "model.zip")
-
-    def save(self) -> str:
-        data = self.to_json()
-        Path(self.work_dir, "config.json").write_text(data)
-        return data
-
-    def prepare_work_dir(self):
-        # fail if the directory already exists
-        Path(self.work_dir).mkdir(parents=True, exist_ok=False)
-        # other children
-        self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
-        self.logs_dir.mkdir(parents=True, exist_ok=True)
 
     @classmethod
     def load(self, encoded: str) -> "TrainConfiguration":

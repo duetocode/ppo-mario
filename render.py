@@ -7,9 +7,9 @@ def run(model_file: Path):
     # delay the import to speedup the startup
     import ppo_mario
 
-    # fix
+    # fix the path if it is needed
     if model_file.is_dir():
-        model_file = model_file / "model-supervised.zip"
+        model_file = model_file / "model.zip"
 
     # load the configuration
     cfg_file = model_file.parent / "config.json"
@@ -25,7 +25,7 @@ def run(model_file: Path):
         print("Loading model with DEFAULT configuration:")
     # but override the model file
     cfg.base_model = str(model_file)
-    model = ppo_mario.create_model(cfg)
+    model = ppo_mario.create_model(cfg, base_model=model_file)
 
     # render
     for frame_skip in range(1, 9):

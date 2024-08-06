@@ -15,8 +15,14 @@ def get_device() -> str:
 
 def copy_preivous_logs(model_file: str | Path, work_dir: Path):
     """Copy the logs from the previous training if available"""
+    model_file = Path(model_file)
+    # ignore if alredy in the work directory
+    if str(model_file.parent.absolute()).startswith(str(work_dir.absolute())):
+        print("The previous model is already in the work directory.")
+        return
+
     # find the log dir
-    previous_log_dir = Path(model_file).parent / "logs"
+    previous_log_dir = model_file.parent / "logs"
     if not (previous_log_dir.exists or previous_log_dir.is_dir()):
         print("No previous logs found")
         return
@@ -50,3 +56,37 @@ def get_sub_process_start_method() -> str:
         return "spawn"
     else:
         return "fork"
+
+
+class WorkDir:
+
+    def __init__(self, work_dir: str | Path):
+        self.root = Path(work_dir)
+
+    def child(self, name: str | Path) -> Path:
+        return self.root / name
+
+    @property
+    def config(self) -> Path:
+        return self.child("config.json")
+
+    @property
+    def logs(self) -> Path:
+        return self.child("logs")
+
+    @property
+    def checkpoints(self) -> Path:
+        return self.child("checkpoints")
+
+    @property
+    def saved_model(self) -> Path:
+        return self.child("model.zip")
+
+    @property
+    def base_model(self) -> Path:
+        return self.child("base_model.zip")
+
+    def mkdirs(self):
+        """Create the directories"""
+        self.logs.mkdir(parents=True, exist_ok=False)
+        self.checkpoints.mkdir(parents=False, exist_ok=False)

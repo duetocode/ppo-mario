@@ -10,19 +10,24 @@ from torch.utils.data import DataLoader
 import tqdm
 from stable_baselines3 import PPO
 
-from ppo_mario import get_device
+from ppo_mario import get_device, TrainConfiguration, create_model
 from .dataset import MarioDataset
 from .losses import focal_loss
 from .misc import DummyEnv
-from .model import create_model
 
 
 class BehaviorCloning:
 
     def __init__(
-        self, expert_data_dir: str | Path, learning_rate: float, batch_size: int
+        self,
+        expert_data_dir: str | Path,
+        learning_rate: float,
+        batch_size: int,
+        model_save_path: str | Path,
+        cfg: TrainConfiguration,
     ):
         """Train a new PPO model with expert replay."""
+        expert_data_dir = Path(expert_data_dir)
         if not (
             expert_data_dir.exists()
             and expert_data_dir.is_dir()
@@ -34,9 +39,9 @@ class BehaviorCloning:
         print("Device:", self.device)
 
         # the work directory
-        self.work_dir = Path("work", "BC", datetime.now().strftime("%Y%m%d-%H%M"))
-        self.work_dir.mkdir(parents=True, exist_ok=True)
-        self.saved_model = self.work_dir / "model-supervised.zip"
+        self.cfg = cfg
+        self.cfg.device = self.device
+        self.model_save_path = Path(model_save_path)
 
         # prepare the dataset and the data loader
         self.dataset = MarioDataset(expert_data_dir, device=self.device)
@@ -50,7 +55,7 @@ class BehaviorCloning:
         )
 
         # prepare the model
-        self.model, self.cfg = create_model(device=self.device, env=DummyEnv())
+        self.model = create_model(cfg, env=DummyEnv())
 
         # prepare the optimizer
         self.optimizer = torch.optim.Adam(
@@ -117,8 +122,6 @@ class BehaviorCloning:
         return loss_avg, acc
 
     def train(self, n_epochs: int) -> dict:
-        # save the cfg
-        (self.work_dir / "config.json").write_text(self.cfg.to_json())
         # run the epoches
         for e in range(n_epochs):
             # the epoch training
@@ -130,13 +133,13 @@ class BehaviorCloning:
                 self.model.policy.vf_features_extractor.load_state_dict(
                     self.features_extractor.state_dict()
                 )
-                self.model.save(str(self.saved_model))
+                self.model.save(str(self.model_save_path))
                 self.best_model_info = {
                     "epoch": e,
                     "loss": float(loss_avg),
                     "accuracy": float(acc),
                 }
                 # write the info to the score file
-                (self.work_dir / "score.txt").write_text(
+                (self.model_save_path.parent / "score.txt").write_text(
                     json.dumps(self.best_model_info)
                 )

@@ -1,84 +1,91 @@
+import sys
 from pathlib import Path
-from datetime import datetime
 import shutil
 
+from ppo_mario.misc import WorkDir
 
-def main(args):
-    from ppo_mario import train, TrainConfiguration
-    from ppo_mario.misc import copy_preivous_logs, launch_tensorboard
+DEFAULT_CFG_FILE = "config.json"
 
-    # prepare the work dir
-    ts = datetime.now()
-    work_dir = Path("work", ts.strftime("%Y-%m-%d_%H-%M"))
-    if work_dir.exists():
-        raise FileExistsError(f"Directory {work_dir} already exists")
-    print("Work directory:", work_dir)
 
-    # the configuration
-    cfg = TrainConfiguration(
-        work_dir=str(work_dir),
-        base_model=args.base_model,
-        total_timesteps=args.total_steps,
-        learning_rate=args.learning_rate,
-        freeze_actor=args.freeze_actor,
-        n_steps=args.steps,
-        random_frame_skip=args.random_frame_skip,
-    )
-    cfg.prepare_work_dir()
+def create_work_directory(work_dir: WorkDir, args):
+    if work_dir.root.exists():
+        print("The work directory already exists.", file=sys.stderr)
+        sys.exit(-1)
 
-    # copy the previous logs if they exist
+    print("Creating a new working directory at ", work_dir)
+    work_dir.mkdirs()
+    print("Write default configuration to", DEFAULT_CFG_FILE)
+
+    from ppo_mario import TrainConfiguration
+    from ppo_mario.misc import copy_preivous_logs
+
+    # the default configuration
+    cfg = TrainConfiguration()
+    # copy the base model if it is provided
     if args.base_model:
-        copy_preivous_logs(args.base_model, work_dir)
+        base_model = Path(args.base_model)
+        if not (base_model.exists() or base_model.is_file()):
+            print("Invalid base model path.", file=sys.stderr)
+            sys.exit(-2)
+        # copy it here
+        shutil.copy(base_model, work_dir.base_model)
+        # copy the previous logs if they exist
+        copy_preivous_logs(base_model, work_dir)
+
+    # write the configuration to the file
+    work_dir.config.write_text(cfg.to_json())
+
+    print("Done.")
+
+
+def main(work_dir: WorkDir, args):
+    from ppo_mario import train
+    from ppo_mario.misc import launch_tensorboard
+
+    # check to avoid overwriting the work directory
+    if not (work_dir.root.exists() and work_dir.root.is_dir()):
+        print("Invalid work directory.", (work_dir.root), file=sys.stderr)
+        sys.exit(-10)
+
+    # check if the config file exists
+    if not work_dir.config.exists():
+        print("Configuration file not found.", file=sys.stderr)
+        sys.exit(-20)
 
     # launch the tensorboard
-    launch_tensorboard(cfg.logs_dir)
+    launch_tensorboard(work_dir.logs)
 
     # call the training function
-    train(cfg, n_envs=args.jobs)
-
-    # archive the work directory
-    archive_dir = Path("archive")
-    archive_dir.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(cfg.work_dir), str(archive_dir))
+    train(work_dir, n_envs=args.jobs)
 
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Train a model.")
+    parser.add_argument("work_dir", type=str, help="The work directory.")
     parser.add_argument(
-        "--base-model", "-m", type=str, help="The path to the model file."
+        "--create", "-c", action="store_true", help="Create a new work directory."
     )
-    parser.add_argument("--jobs", "-j", type=int, default=8, help="The number of jobs.")
     parser.add_argument(
-        "--total-steps",
-        "-t",
+        "--base-model",
+        "-m",
+        type=Path,
+        default=None,
+        help="The base model for continuing training.",
+    )
+    parser.add_argument(
+        "--jobs",
+        "-j",
         type=int,
-        default=100_000,
-        help="The total number of timesteps to train.",
-    )
-    parser.add_argument(
-        "--learning-rate", "-l", type=float, default=2e-5, help="The learning rate."
-    )
-    parser.add_argument(
-        "--freeze-actor",
-        "-f",
-        action="store_true",
-        help="Freeze the actor network.",
-    )
-    parser.add_argument(
-        "--steps",
-        "-s",
-        type=int,
-        default=2048,
-        help="The number of steps per simulation",
-    )
-    parser.add_argument(
-        "--random-frame-skip",
-        action="store_true",
-        default=False,
-        help="Randomize the frame skip",
+        default=None,
+        help="The number of parallel processes for the rollouts.",
     )
     args = parser.parse_args()
 
-    main(args)
+    work_dir = WorkDir(args.work_dir)
+
+    if args.create:
+        create_work_directory(work_dir, args)
+    else:
+        main(work_dir, args)
