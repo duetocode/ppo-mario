@@ -42,7 +42,12 @@ def render_attention(image: np.ndarray, attention_map: torch.Tensor):
     return canvas
 
 
-def render(model: PPO, output_file: str | Path, with_attention: bool = False):
+def render(
+    model: PPO,
+    output_file: str | Path,
+    n_frame_skipping: int,
+    with_attention: bool = False,
+):
     """Render a gameplay episode with the given model and output to the specified file."""
     # prepare the environment
     env = create_env(
@@ -76,7 +81,7 @@ def render(model: PPO, output_file: str | Path, with_attention: bool = False):
         #     )
 
         # step the game
-        for _ in range(3):
+        for _ in range(n_frame_skipping):
             obs, _, terminated, truncated, info = env.step(action.tolist())
             obs = np.asarray(obs)
             done = terminated or truncated

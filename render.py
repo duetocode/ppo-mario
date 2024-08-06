@@ -1,5 +1,6 @@
 from pathlib import Path
 import argparse
+from time import time
 
 
 def run(model_file: Path):
@@ -26,14 +27,16 @@ def run(model_file: Path):
     cfg.base_model = str(model_file)
     model = ppo_mario.create_model(cfg)
 
-    # the output file should place in the same directory as the model
-    output_file = model_file.parent / "gameplay.mp4"
-
     # render
-    ppo_mario.render(model, output_file)
-
-    # output
-    print("The gameplay video is saved to", str(output_file))
+    for frame_skip in range(1, 9):
+        print(f"Rendering with frame skipping {frame_skip}...")
+        t_0 = time()
+        ppo_mario.render(
+            model,
+            model_file.parent / f"gameplay_{frame_skip}.mp4",
+            n_frame_skipping=frame_skip,
+        )
+        print(f"Rendered with frame skipping {frame_skip} in {time()-t_0:.2f}s")
 
 
 if __name__ == "__main__":
