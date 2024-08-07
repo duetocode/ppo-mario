@@ -5,6 +5,8 @@ import torch
 from gymnasium import Env
 from stable_baselines3.ppo import PPO
 
+from ppo_mario.config import TrainConfiguration
+
 from .environment import create_env
 
 WIDTH = 256
@@ -46,12 +48,16 @@ def render(
     model: PPO,
     output_file: str | Path,
     n_frame_skipping: int,
+    cfg: TrainConfiguration,
     with_attention: bool = False,
 ):
     """Render a gameplay episode with the given model and output to the specified file."""
     # prepare the environment
     env = create_env(
-        with_random_episode=False, with_frame_skip=False, with_mario_reward=False
+        with_random_episode=False,
+        with_frame_skip=False,
+        with_mario_reward=False,
+        level=tuple(cfg.level),
     )
     obs, _ = env.reset()
     vf_features_extractor = model.policy.vf_features_extractor.train(False)

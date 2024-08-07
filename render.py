@@ -35,6 +35,7 @@ def run(model_file: Path):
             model,
             model_file.parent / f"gameplay_{frame_skip}.mp4",
             n_frame_skipping=frame_skip,
+            cfg,
         )
         print(f"Rendered with frame skipping {frame_skip} in {time()-t_0:.2f}s")
 
