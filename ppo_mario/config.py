@@ -1,6 +1,7 @@
 import dataclasses as dc
 from pathlib import Path
 import json
+from typing import Type
 
 
 @dc.dataclass
@@ -17,16 +18,33 @@ class TrainConfiguration:
     normalize_advantage: bool = False
     random_frame_skip: bool = False
     level: tuple = (4, 1)
+    policy_kwargs: dict = dc.field(default_factory=dict)
 
     def to_json(self) -> str:
+        """Serialize the configuration object to a JSON string"""
         return json.dumps(dc.asdict(self), indent=4)
 
     @classmethod
     def load(self, encoded: str) -> "TrainConfiguration":
+        """
+        Load the configuration object from a JSON string
+
+        Parameters
+        ----------
+        encoded : str
+            The JSON string.
+
+        Returns
+        -------
+        TrainConfiguration
+            The configuration object
+        """
         return TrainConfiguration(**json.loads(encoded))
 
     @property
     def ppo_cfg(self) -> dict:
+        """Get the kwargs fro the PPO class."""
+
         return dict(
             batch_size=self.batch_size,
             n_steps=self.n_steps,
@@ -36,4 +54,5 @@ class TrainConfiguration:
             target_kl=self.target_kl,
             clip_range=self.clip_range,
             normalize_advantage=self.normalize_advantage,
+            policy_kwargs=self.policy_kwargs,
         )

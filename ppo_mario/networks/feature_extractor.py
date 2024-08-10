@@ -2,34 +2,29 @@ import numpy as np
 import torch
 import torch.nn as nn
 from .resent import ResBlock
-from .attention import PoolingAttention
+from .attention import SpatialAttention
 from gymnasium.spaces import Box
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 
 class ResNetFeatureExtractor(BaseFeaturesExtractor):
 
-    def __init__(self, observation_space: Box, features_dim: int = 256):
+    def __init__(self, observation_space: Box, features_dim: int = 64):
         super().__init__(observation_space, features_dim)
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 4, kernel_size=5, stride=1, padding=2, bias=False),
-            ResBlock(4, 4, stride=2),
-        )
-
-        self.attention = nn.Sequential(
-            nn.Conv2d(4, 1, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(1),
-            nn.Sigmoid(),
+            nn.Conv2d(1, 4, kernel_size=5, stride=2, padding=2, bias=False),
+            nn.BatchNorm2d(4),
+            nn.ReLU(),
         )
 
         self.extractor = nn.Sequential(
             ResBlock(32, 64, stride=2),
+            ResBlock(64, 64, stride=2),
             ResBlock(64, 128, stride=2),
-            ResBlock(128, 256, stride=2),
         )
 
-        self.attention2 = PoolingAttention()
+        self.attention = SpatialAttention()
 
         # calculate the output dimensions
         with torch.no_grad():
@@ -52,15 +47,14 @@ class ResNetFeatureExtractor(BaseFeaturesExtractor):
         # reshape the input to prepare and process the frames individually
         latent = obs.reshape(-1, 1, *obs.shape[-2:])
         latent = self.conv1(latent)
-        # apply the first attention layer
-        attention = self.attention(latent)
-        latent = latent * attention
+
         # reshape the latent back to stacked frames for integrated processing
         latent = latent.reshape(-1, 32, *latent.shape[-2:])
         latent = self.extractor(latent)
 
-        # apply the second attention layer
-        attention = self.attention2(latent)
+        # apply the  attention layer
+        attention = self.attention(latent)
+        # cache the attention for later use
         self._attention = attention
         latent = latent * attention
 
