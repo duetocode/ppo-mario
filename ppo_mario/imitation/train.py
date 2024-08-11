@@ -69,6 +69,7 @@ class BehaviorCloning:
         )
 
         self.best_acc = 0
+        self.find_best_model = False
         self.best_model_info = None
 
     @property
@@ -84,6 +85,7 @@ class BehaviorCloning:
         return self.model.policy.action_net
 
     def train_epoch(self, epoch: int) -> Tuple[float, float]:
+        self.is_best_model = False
         self.model.policy.set_training_mode(True)
         losses = []
         pbar = tqdm.tqdm(self.loader, desc="Training")
@@ -115,8 +117,11 @@ class BehaviorCloning:
         acc = n_true_positives / np.sum(self.dataset.class_counts)
         pbar.clear()
 
+        self.is_best_model = acc >= self.best_acc
+        self.best_acc = max(self.best_acc, acc)
+
         pbar.write(
-            f"[Epoch {epoch + 1}] ACC: {acc:.4f} Average Loss: {loss:.4f} {'*' if acc > self.best_acc * .01 else ''}"
+            f"[Epoch {epoch + 1}] ACC: {acc:.4f} Average Loss: {loss:.4f} {'*' if self.is_best_model else ''}"
         )
 
         return loss_avg, acc
@@ -126,8 +131,7 @@ class BehaviorCloning:
         for e in range(n_epochs):
             # the epoch training
             loss_avg, acc = self.train_epoch(e)
-            if acc > self.best_acc * 0.01:
-                self.best_acc = acc
+            if self.is_best_model:
                 # save the best model
                 # but first, copy the weights of the actor model to the critic model
                 self.model.policy.vf_features_extractor.load_state_dict(
