@@ -13,10 +13,10 @@ class TrainConfiguration:
     learning_rate: float = 1e-4
     freeze_actor: bool = False
     target_kl: float = 0.2
-    clip_range: float = 0.1
+    clip_range: float = 0.2
     total_timesteps: int = 500_000
     normalize_advantage: bool = False
-    random_frame_skip: bool = False
+    random_frame_skip: bool = True
     level: tuple = (4, 1)
     policy_kwargs: dict = dc.field(default_factory=dict)
 
