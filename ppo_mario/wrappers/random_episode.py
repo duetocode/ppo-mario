@@ -26,19 +26,19 @@ class RandomEpisode(Wrapper):
         self._rng = random.Random(seed)
 
         # iterate the checkpoints
-        self._checkpoints = sorted(data_dir.glob("*.state.xz"))
+        self._checkpoints = sorted(data_dir.glob("**/*.state.xz"))
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         # reset the environment
         obs, info = self.env.reset(seed=seed, options=options)
 
         # randomly select a checkpoint with the rate
-        if self._rng.random() < self.random_starts_rate:
-            checkpoint = self._rng.choice(self._checkpoints)
-            # load the checkpoint
-            saved_state = lzma.decompress(checkpoint.read_bytes())
-            self.env.unwrapped.deserialize(saved_state)
-            # refresh the info because the state is changed
-            info = self.get_info()
+        # if self._rng.random() < self.random_starts_rate:
+        checkpoint = self._rng.choice(self._checkpoints)
+        # load the checkpoint
+        saved_state = lzma.decompress(checkpoint.read_bytes())
+        self.env.unwrapped.deserialize(saved_state)
+        # refresh the info because the state is changed
+        info = self.get_info()
 
         return obs, info

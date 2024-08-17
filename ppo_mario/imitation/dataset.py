@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 import torch
@@ -20,7 +21,9 @@ class MarioDataset(Dataset):
         device = device if device is not None else get_device()
 
         # enumerate the data
-        data = [np.load(f) for f in sorted(data_dir.glob("*.npz"))]
+        data = [np.load(f) for f in sorted(data_dir.glob("**/*.npz"))]
+        print(f"Found {len(data)} data points.")
+        print(data[0])
         # split into observations(inputs) and actions(labels) and convert to torch.Tensor
         self.observations = [
             torch.as_tensor(
@@ -47,3 +50,21 @@ class MarioDataset(Dataset):
     def __getitem__(self, idx):
         action = self.actions[idx]
         return self.observations[idx], self.actions[idx], self.class_weights[action]
+
+    def split_train_val(self, validation_split: float = 0.2) -> Tuple[Dataset, Dataset]:
+        """Split the dataset into trianing and validation datasets respect to the given ratio.
+
+        parameters
+        ----------
+        validation_split: float
+            The ratio of the validation dataset. Default is 0.2.
+
+        return
+        -------
+        Tuple[Dataset, Dataset]
+            The training and validation datasets.
+        """
+
+        train_size = int(len(self) * (1 - validation_split))
+        val_size = len(self) - train_size
+        return torch.utils.data.random_split(self, [train_size, val_size])

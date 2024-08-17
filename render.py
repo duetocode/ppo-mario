@@ -3,7 +3,7 @@ import argparse
 from time import time
 
 
-def run(model_file: Path):
+def run(model_file: Path, frame_skip: int):
     # delay the import to speedup the startup
     import ppo_mario
 
@@ -28,16 +28,18 @@ def run(model_file: Path):
     model = ppo_mario.create_model(cfg, base_model=model_file)
 
     # render
-    for frame_skip in range(1, 9):
+    for frame_skip in range(frame_skip, max(0, frame_skip - 1), -1):
         print(f"Rendering with frame skipping {frame_skip}...")
         t_0 = time()
-        ppo_mario.render(
+        n_frames = ppo_mario.render(
             model,
             model_file.parent / f"gameplay_{frame_skip}.mp4",
             cfg=cfg,
             n_frame_skipping=frame_skip,
         )
-        print(f"Rendered with frame skipping {frame_skip} in {time()-t_0:.2f}s")
+        print(
+            f"Rendered {n_frames} for {n_frames / 60:.3f}s with frame skipping {frame_skip} in {time()-t_0:.2f}s:"
+        )
 
 
 if __name__ == "__main__":
@@ -45,9 +47,16 @@ if __name__ == "__main__":
         description="Render a gameplay episode with the given model."
     )
     parser.add_argument("model", type=Path, help="The path to the model file.")
+    parser.add_argument(
+        "--frame-skip",
+        "-s",
+        type=int,
+        default=-1,
+        help="The frame skipping value. The default is to render all frame skipping values [1, 8].",
+    )
 
     args = parser.parse_args()
 
     print("Render a gameplay episode with the given model: ", str(args.model))
 
-    run(args.model)
+    run(args.model, args.frame_skip)

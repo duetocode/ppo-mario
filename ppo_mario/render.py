@@ -50,8 +50,15 @@ def render(
     n_frame_skipping: int,
     cfg: TrainConfiguration,
     with_attention: bool = False,
-):
-    """Render a gameplay episode with the given model and output to the specified file."""
+) -> int:
+    """
+    Render a gameplay episode with the given model and output to the specified file.
+
+    returns
+    -------
+    int
+        The number of frames rendered.
+    """
     # prepare the environment
     env = create_env(
         with_random_episode=False,
@@ -118,3 +125,4 @@ def render(
             frame += 1
 
     writer.release()
+    return frame

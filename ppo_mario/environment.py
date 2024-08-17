@@ -24,7 +24,7 @@ def create_env(
 
     # random episode reset
     if with_random_episode:
-        env = RandomEpisode(env, data_dir="assets/playthrough")
+        env = RandomEpisode(env, data_dir="assets/expert_data")
 
     # new reward scheme and stuck detection
     if with_mario_reward:

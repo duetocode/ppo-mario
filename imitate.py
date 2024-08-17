@@ -7,6 +7,7 @@ def main(
     epoches: int,
     learning_rate: float,
     batch_size: int,
+    l2: float,
 ):
     """Train the agent model with Imitation Learning"""
     import json, sys
@@ -32,6 +33,7 @@ def main(
         learning_rate=learning_rate,
         batch_size=batch_size,
         model_save_path=work_dir.base_model,
+        l2=l2,
     )
     bc.train(epoches)
 
@@ -60,6 +62,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--batch_size", "-b", type=int, default=32, help="The batch size."
+    )
+    parser.add_argument(
+        "-l2", type=float, default=2e-5, help="The L2 regularization strength."
     )
 
     args = parser.parse_args()
