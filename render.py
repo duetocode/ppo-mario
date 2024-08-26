@@ -6,6 +6,7 @@ from time import time
 def run(model_file: Path, frame_skip: int):
     # delay the import to speedup the startup
     import ppo_mario
+    import numpy as np
 
     # fix the path if it is needed
     if model_file.is_dir():
@@ -28,6 +29,7 @@ def run(model_file: Path, frame_skip: int):
     model = ppo_mario.create_model(cfg, base_model=model_file)
 
     # render
+    decision_times = []
     for frame_skip in range(frame_skip, max(0, frame_skip - 1), -1):
         print(f"Rendering with frame skipping {frame_skip}...")
         t_0 = time()
@@ -37,8 +39,9 @@ def run(model_file: Path, frame_skip: int):
             cfg=cfg,
             n_frame_skipping=frame_skip,
         )
+        t_1 = time()
         print(
-            f"Rendered {n_frames} for {n_frames / 60:.3f}s with frame skipping {frame_skip} in {time()-t_0:.2f}s:"
+            f"Rendered {n_frames} for {n_frames / 60:.3f}s with frame skipping {frame_skip} in {t_1-t_0:.2f}s:"
         )
 
 

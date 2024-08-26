@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from .resent import ResBlock
 from .attention import SpatialAttention
-from gymnasium.spaces import Box
+from gymnasium.spaces import Box, Space
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 
@@ -21,7 +21,6 @@ class ResNetFeatureExtractor(BaseFeaturesExtractor):
         self.extractor = nn.Sequential(
             ResBlock(32, 64, stride=2),
             ResBlock(64, 64, stride=2),
-            ResBlock(64, 128, stride=2),
         )
 
         self.attention = SpatialAttention()
@@ -60,3 +59,52 @@ class ResNetFeatureExtractor(BaseFeaturesExtractor):
 
         # project the latent to the feature dimension
         return self.projection(latent)
+
+
+class AttentionCNN(BaseFeaturesExtractor):
+
+    def __init__(
+        self,
+        observation_space: Space,
+        features_dim: int = 512,
+        normalized_image: bool = False,
+    ) -> None:
+        super().__init__(observation_space, features_dim)
+
+        # these code are copied from stable_baselines3.common.torch_layers.NatureCNN
+        n_input_channels = observation_space.shape[0]
+        self.cnn = nn.Sequential(
+            nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0),
+            nn.ReLU(),
+        )
+
+        # the attention layer
+        self.attention = SpatialAttention()
+
+        # the flatten layer
+        self.flatten = nn.Flatten()
+
+        # the linear layer that projects the extracted features to the feature dimension
+        with torch.no_grad():
+            n_flatten = self.flatten(
+                self.cnn(torch.as_tensor(observation_space.sample()[None]).float())
+            ).shape[-1]
+        self.linear = nn.Sequential(
+            nn.Linear(n_flatten, features_dim),
+            nn.ReLU(),
+        )
+
+    def forward(self, obs: torch.Tensor) -> torch.Tensor:
+        # first, go through the CNN
+        out = self.cnn(obs)
+        # then, apply the attention layer
+        attention = self.attention(out)
+        # we save the attention for later use
+        self.attention_data = attention
+        out = out * attention
+        # finally, flatten and project the features
+        return self.linear(self.flatten(out))

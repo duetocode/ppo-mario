@@ -21,9 +21,12 @@ class MarioDataset(Dataset):
         device = device if device is not None else get_device()
 
         # enumerate the data
-        data = [np.load(f) for f in sorted(data_dir.glob("**/*.npz"))]
+        data = []
+        for f in sorted(data_dir.glob("**/*.npz")):
+            with np.load(f) as npz_file:
+                data.append({"obs": npz_file["obs"], "action": npz_file["action"]})
+
         print(f"Found {len(data)} data points.")
-        print(data[0])
         # split into observations(inputs) and actions(labels) and convert to torch.Tensor
         self.observations = [
             torch.as_tensor(

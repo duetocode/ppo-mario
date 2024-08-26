@@ -17,6 +17,8 @@ class TrainConfiguration:
     total_timesteps: int = 500_000
     normalize_advantage: bool = False
     random_frame_skip: bool = True
+    vf_coef: float = 0.5
+    ent_coef: float = 0.0
     level: tuple = (4, 1)
     policy_kwargs: dict = dc.field(default_factory=dict)
 
@@ -55,4 +57,6 @@ class TrainConfiguration:
             clip_range=self.clip_range,
             normalize_advantage=self.normalize_advantage,
             policy_kwargs=self.policy_kwargs,
+            ent_coef=self.ent_coef,
+            vf_coef=self.vf_coef,
         )

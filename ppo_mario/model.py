@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 from stable_baselines3 import PPO
 
-from ppo_mario.networks.feature_extractor import ResNetFeatureExtractor
+from ppo_mario.networks.feature_extractor import AttentionCNN, ResNetFeatureExtractor
 
 from .config import TrainConfiguration
 from gymnasium import Env
@@ -30,6 +30,9 @@ def generate_model_cfg(cfg: TrainConfiguration) -> dict:
     elif clazz == "ResNetFeatureExtractor":
         # use the custom feature extractor
         policy_kwargs["features_extractor_class"] = ResNetFeatureExtractor
+    elif clazz == "AttentionCNN":
+        # use the custom feature extractor
+        policy_kwargs["features_extractor_class"] = AttentionCNN
     else:
         # unknown class
         raise ValueError(

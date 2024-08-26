@@ -38,7 +38,7 @@ class RandomEpisode(Wrapper):
         # load the checkpoint
         saved_state = lzma.decompress(checkpoint.read_bytes())
         self.env.unwrapped.deserialize(saved_state)
-        # refresh the info because the state is changed
+        # refresh the info because the state has changed
         info = self.get_info()
 
         return obs, info

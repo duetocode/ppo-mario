@@ -1,3 +1,4 @@
+from time import time
 from pathlib import Path
 import numpy as np, cv2
 import torch
@@ -79,13 +80,17 @@ def render(
     )
 
     # render loop
+    inference_times = []
     done = False
     frame = 0
     while not done:
         # preprocess the observation
         obs = np.transpose(np.squeeze(obs), (1, 2, 0))
         # make a prediction
+        t_0 = time()
         action, _ = model.predict(obs, deterministic=True)
+        inference_times.append(time() - t_0)
+
         # run the value features extractor for its attention map
         # with torch.no_grad():
         #     vf_features_extractor(
@@ -123,6 +128,8 @@ def render(
             writer.write(screen)
 
             frame += 1
+
+    print("Average inference time:", np.mean(inference_times[10:]))
 
     writer.release()
     return frame
