@@ -12,7 +12,7 @@ def create_work_directory(work_dir: WorkDir, args):
         print("The work directory already exists.", file=sys.stderr)
         sys.exit(-1)
 
-    print("Creating a new working directory at ", work_dir)
+    print("Creating a new working directory at ", str(work_dir))
     work_dir.mkdirs()
     print("Write default configuration to", DEFAULT_CFG_FILE)
 

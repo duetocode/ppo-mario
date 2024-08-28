@@ -21,6 +21,7 @@ class TrainConfiguration:
     ent_coef: float = 0.0
     level: tuple = (4, 1)
     policy_kwargs: dict = dc.field(default_factory=dict)
+    reward_params: dict = dc.field(default_factory=dict)
 
     def to_json(self) -> str:
         """Serialize the configuration object to a JSON string"""

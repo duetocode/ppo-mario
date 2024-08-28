@@ -13,14 +13,29 @@ class MarioReward(Wrapper):
         self,
         env: Env,
         max_stuck_frames: int = 16,
+        death_penalty: int = -50,
+        flag_reward: int = 50,
+        x_reward: int = 1,
+        stuck_penalty: int = -1,
     ):
         """
         Initialize the wrapper.
-        args:
-            env: The environment to wrap.
-            max_stuck_frame: int The maximum number of frames the agent can be stuck before the episode is terminated.
+
+        parameters
+        ----------
+        env Env
+            The environment to wrap.
+        max_stuck_frame int
+            int The maximum number of frames the agent can be stuck before the episode is terminated.
+
         """
         super().__init__(env)
+
+        self.death_penalty = death_penalty
+        self.flag_reward = flag_reward
+        self.x_reward = x_reward
+        self.stuck_penalty = stuck_penalty
+
         self.max_stuck_frames = max_stuck_frames
 
         # the progress of the gamy
@@ -50,7 +65,7 @@ class MarioReward(Wrapper):
 
         # death penalty and
         if is_dead or y_pos < 75:
-            return obs, -50, True, truncated, info
+            return obs, self.death_penalty, True, truncated, info
 
         # stuck penalty
         x_displacement = x_pos - self._progress
@@ -67,16 +82,16 @@ class MarioReward(Wrapper):
                 return obs, stuck_penalty, True, truncated, info
 
             # x position reward
-            x_reward = x_displacement
+            x_reward = x_displacement * self.x_reward
         else:
             x_reward = 0
             stuck_penalty = 0
 
         # flag reward
         if flag_get:
-            flag_reward = 50
+            flag_reward = self.flag_reward
             # encourage to reach the bottom of the pole
-            flag_reward += 240 - y_pos
+            flag_reward += (240 - y_pos) / 10
         else:
             flag_reward = 0
 

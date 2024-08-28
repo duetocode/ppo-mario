@@ -16,6 +16,7 @@ def create_env(
     with_random_episode: bool = True,
     with_mario_reward: bool = True,
     level: tuple = (4, 1),
+    reward_params: dict = {},
 ):
     # the basic environment creation
     env = gym_super_mario_bros.make(
@@ -28,7 +29,7 @@ def create_env(
 
     # new reward scheme and stuck detection
     if with_mario_reward:
-        env = MarioReward(env, max_stuck_frames=16)
+        env = MarioReward(env, max_stuck_frames=16, **reward_params)
 
     # the action space for speedrunning
     env = JoypadSpace(env, actions=FAST_MOVE)

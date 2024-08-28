@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from .resent import ResBlock
-from .attention import SpatialAttention
+from .resent import AttentionResBlock
+from .attention import Attention
 from gymnasium.spaces import Box, Space
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
@@ -19,11 +19,9 @@ class ResNetFeatureExtractor(BaseFeaturesExtractor):
         )
 
         self.extractor = nn.Sequential(
-            ResBlock(32, 64, stride=2),
-            ResBlock(64, 64, stride=2),
+            AttentionResBlock(32, 64, stride=2),
+            AttentionResBlock(64, 64, stride=2),
         )
-
-        self.attention = SpatialAttention()
 
         # calculate the output dimensions
         with torch.no_grad():
@@ -42,6 +40,14 @@ class ResNetFeatureExtractor(BaseFeaturesExtractor):
             nn.ReLU(),
         )
 
+    @property
+    def attention_maps(self):
+        return [
+            block.attention_data.cpu().numpy()
+            for block in self.extractor
+            if hasattr(block, "attention_data")
+        ]
+
     def forward(self, obs: torch.Tensor) -> torch.Tensor:
         # reshape the input to prepare and process the frames individually
         latent = obs.reshape(-1, 1, *obs.shape[-2:])
@@ -50,12 +56,6 @@ class ResNetFeatureExtractor(BaseFeaturesExtractor):
         # reshape the latent back to stacked frames for integrated processing
         latent = latent.reshape(-1, 32, *latent.shape[-2:])
         latent = self.extractor(latent)
-
-        # apply the  attention layer
-        attention = self.attention(latent)
-        # cache the attention for later use
-        self._attention = attention
-        latent = latent * attention
 
         # project the latent to the feature dimension
         return self.projection(latent)
@@ -83,7 +83,7 @@ class AttentionCNN(BaseFeaturesExtractor):
         )
 
         # the attention layer
-        self.attention = SpatialAttention()
+        self.attention = Attention(64, 16)
 
         # the flatten layer
         self.flatten = nn.Flatten()
@@ -104,7 +104,7 @@ class AttentionCNN(BaseFeaturesExtractor):
         # then, apply the attention layer
         attention = self.attention(out)
         # we save the attention for later use
-        self.attention_data = attention
+        self.attention_data = [attention]
         out = out * attention
         # finally, flatten and project the features
         return self.linear(self.flatten(out))

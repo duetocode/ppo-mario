@@ -25,26 +25,6 @@ def draw_info(canvas: np.ndarray, info: dict, frame: int):
     put_text(canvas, f"y:{info['y_pos']}", (768 + 30, 60))
 
 
-def render_attention(image: np.ndarray, attention_map: torch.Tensor):
-    # resize the attention map to match the image size
-    # howerver, there should be 16 pixel padding on the top
-    attention = cv2.resize(
-        (attention_map * 255)[0].detach().cpu().numpy().astype(np.uint8).squeeze(),
-        dsize=(256, 240 - TOP_PADDING),
-        interpolation=cv2.INTER_CUBIC,
-    )
-
-    # apply color map
-    attention = cv2.applyColorMap(attention, cv2.COLORMAP_JET)
-
-    # prepare the canvas
-    canvas = image.copy()
-    # draw the attention map
-    canvas[TOP_PADDING:, :] = canvas[TOP_PADDING:, :] * 0.5 + attention * 0.5
-
-    return canvas
-
-
 def render(
     model: PPO,
     output_file: str | Path,
@@ -68,7 +48,7 @@ def render(
         level=tuple(cfg.level),
     )
     obs, _ = env.reset()
-    vf_features_extractor = model.policy.vf_features_extractor.train(False)
+    features_extractor = model.policy.features_extractor
 
     # the video encoder
     writer = cv2.VideoWriter(
@@ -91,12 +71,23 @@ def render(
         action, _ = model.predict(obs, deterministic=True)
         inference_times.append(time() - t_0)
 
-        # run the value features extractor for its attention map
-        # with torch.no_grad():
-        #     vf_features_extractor(
-        #         torch.as_tensor(obs[None].transpose(0, 3, 1, 2)).to(model.device)
-        #         / 255.0
-        #     )
+        # get the attention map from the spatial gate attention layer of the features extractor
+        attention_map = None
+        if hasattr(features_extractor, "attention_data"):
+            # get the attention map
+            attention_map = features_extractor.attention_data
+            # convert to in RAM image
+            attention_map = (
+                (attention_map * 255).cpu().numpy().astype(np.uint8).squeeze()
+            )
+            # resize the attention map to match the image size
+            attention_map = cv2.resize(
+                attention_map,
+                dsize=(256, 240 - TOP_PADDING),
+                interpolation=cv2.INTER_CUBIC,
+            )
+            # color map
+            attention_map = cv2.applyColorMap(attention_map, cv2.COLORMAP_JET)
 
         # step the game
         for _ in range(n_frame_skipping):
@@ -110,21 +101,12 @@ def render(
             screen = cv2.cvtColor(screen, cv2.COLOR_RGB2BGR)
 
             # render the attention views
-            # policy_attention = render_attention(
-            #     screen, model.policy.features_extractor._attention
-            # )
-            # value_attention = render_attention(screen, vf_features_extractor._attention)
+            if attention_map is not None:
+                # draw the attention map over the screen
+                screen[TOP_PADDING:, :] = (
+                    screen[TOP_PADDING:, :] * 0.5 + attention_map * 0.5
+                )
 
-            # create the output screen
-            # canvas = np.zeros((HEIGHT, WIDTH * 4, 3), dtype=np.uint8)
-            # draw the screen on the top
-            # canvas[:, WIDTH * 0 : WIDTH * 1, :] = screen
-            # canvas[:, WIDTH * 1 : WIDTH * 2, :] = policy_attention
-            # canvas[:, WIDTH * 2 : WIDTH * 3, :] = value_attention
-            # # draw the information
-            # draw_info(canvas, info, frame)
-            # save the frame
-            # writer.write(canvas)
             writer.write(screen)
 
             frame += 1

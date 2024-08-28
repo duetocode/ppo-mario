@@ -1,4 +1,6 @@
 import torch.nn as nn
+from .attention import Attention
+
 
 class ResBlock(nn.Module):
     """Residual block with two convolutions and a skip connection. The code is inpired by torchvision.models.resnet.BasicBlock."""
@@ -23,18 +25,44 @@ class ResBlock(nn.Module):
         if stride != 1 or in_channels != out_channels:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(
-                    in_channels, out_channels, kernel_size=1, stride=stride, padding=0, bias=False
+                    in_channels,
+                    out_channels,
+                    kernel_size=1,
+                    stride=stride,
+                    padding=0,
+                    bias=False,
                 ),
                 nn.BatchNorm2d(out_channels),
             )
         else:
             self.shortcut = nn.Identity()
-            
+
         self.relu2 = nn.ReLU(inplace=True)
 
     def forward(self, x):
         out = self.relu1(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
+        out += self.shortcut(x)
+        out = self.relu2(out)
+        return out
+
+
+class AttentionResBlock(ResBlock):
+
+    def __init__(self, in_channels: int, out_channels: int, stride: int = 1):
+        super().__init__(in_channels, out_channels, stride)
+        self.attention = Attention(out_channels)
+
+    def forward(self, x):
+        # first layer
+        out = self.relu1(self.bn1(self.conv1(x)))
+        out = self.conv2(out)
+
+        # apply the attention layer
+        out, self.attention_data = self.attention(out)
+
+        # continue the resnet block
+        out = self.bn2(out)
         out += self.shortcut(x)
         out = self.relu2(out)
         return out

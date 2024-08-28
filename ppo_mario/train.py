@@ -42,6 +42,7 @@ def train(work_dir: WorkDir, n_envs: int = None):
                 create_env,
                 with_random_frame_skip=cfg.random_frame_skip,
                 level=tuple(cfg.level),
+                reward_params=cfg.reward_params,
             )
         ]
         * n_envs,
