@@ -40,9 +40,9 @@ class ChannelGate(nn.Module):
 
 
 class SpatialGate(nn.Module):
-    def __init__(self, kernel_size: int = 7):
+    def __init__(self, kernel_size: int = 1):
         super(SpatialGate, self).__init__()
-        self.spatial = nn.Sequential(
+        self.attention = nn.Sequential(
             nn.Conv2d(
                 2,
                 1,
@@ -63,9 +63,8 @@ class SpatialGate(nn.Module):
             ],
             dim=1,
         )
-        x_out = self.spatial(latent)
-        scale = F.sigmoid(x_out)
-        return x * scale, scale
+        attention_map = self.attention(latent)
+        return x * attention_map, attention_map
 
 
 class Attention(nn.Module):

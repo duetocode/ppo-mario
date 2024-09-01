@@ -30,6 +30,7 @@ def render(
     output_file: str | Path,
     n_frame_skipping: int,
     cfg: TrainConfiguration,
+    blur: bool = False,
     with_attention: bool = False,
 ) -> int:
     """
@@ -75,11 +76,13 @@ def render(
         attention_map = None
         if hasattr(features_extractor, "attention_data"):
             # get the attention map
-            attention_map = features_extractor.attention_data
+            attention_map = features_extractor.attention_data[-1]
             # convert to in RAM image
             attention_map = (
                 (attention_map * 255).cpu().numpy().astype(np.uint8).squeeze()
             )
+            if blur:
+                attention_map = cv2.blur(attention_map, (2, 2))
             # resize the attention map to match the image size
             attention_map = cv2.resize(
                 attention_map,

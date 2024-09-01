@@ -3,7 +3,7 @@ import argparse
 from time import time
 
 
-def run(model_file: Path, frame_skip: int):
+def run(model_file: Path, frame_skip: int, blur: bool = False):
     # delay the import to speedup the startup
     import ppo_mario
     import numpy as np
@@ -29,7 +29,6 @@ def run(model_file: Path, frame_skip: int):
     model = ppo_mario.create_model(cfg, base_model=model_file)
 
     # render
-    decision_times = []
     for frame_skip in range(frame_skip, max(0, frame_skip - 1), -1):
         print(f"Rendering with frame skipping {frame_skip}...")
         t_0 = time()
@@ -38,6 +37,7 @@ def run(model_file: Path, frame_skip: int):
             model_file.parent / f"gameplay_{frame_skip}.mp4",
             cfg=cfg,
             n_frame_skipping=frame_skip,
+            blur=blur,
         )
         t_1 = time()
         print(
@@ -57,9 +57,16 @@ if __name__ == "__main__":
         default=-1,
         help="The frame skipping value. The default is to render all frame skipping values [1, 8].",
     )
+    parser.add_argument(
+        "--blur",
+        "-b",
+        action="store_true",
+        default=False,
+        help="Apply blur filter to the screenshots.",
+    )
 
     args = parser.parse_args()
 
     print("Render a gameplay episode with the given model: ", str(args.model))
 
-    run(args.model, args.frame_skip)
+    run(args.model, args.frame_skip, args.blur)

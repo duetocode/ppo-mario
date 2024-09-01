@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from .resent import AttentionResBlock
-from .attention import Attention
+from .attention import Attention, SpatialGate
 from gymnasium.spaces import Box, Space
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
@@ -41,9 +41,9 @@ class ResNetFeatureExtractor(BaseFeaturesExtractor):
         )
 
     @property
-    def attention_maps(self):
+    def attention_data(self):
         return [
-            block.attention_data.cpu().numpy()
+            block.attention_data
             for block in self.extractor
             if hasattr(block, "attention_data")
         ]
@@ -83,7 +83,7 @@ class AttentionCNN(BaseFeaturesExtractor):
         )
 
         # the attention layer
-        self.attention = Attention(64, 16)
+        self.attention = SpatialGate()
 
         # the flatten layer
         self.flatten = nn.Flatten()
@@ -102,9 +102,8 @@ class AttentionCNN(BaseFeaturesExtractor):
         # first, go through the CNN
         out = self.cnn(obs)
         # then, apply the attention layer
-        attention = self.attention(out)
+        out, scale = self.attention(out)
         # we save the attention for later use
-        self.attention_data = [attention]
-        out = out * attention
+        self.attention_data = [scale]
         # finally, flatten and project the features
         return self.linear(self.flatten(out))
