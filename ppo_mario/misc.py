@@ -3,6 +3,7 @@ import shutil
 
 
 def get_device() -> str:
+    """Get the best device available"""
     import torch
 
     if torch.backends.mps.is_available():

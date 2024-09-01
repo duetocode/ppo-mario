@@ -9,7 +9,23 @@ def main(
     batch_size: int,
     l2: float,
 ):
-    """Train the agent model with Imitation Learning"""
+    """
+    Train the agent model with Imitation Learning
+
+    Parameters
+    ----------
+    expert_data_dir : str
+        The directory that contains the expert gameplay data that will be used for training.
+    work_dir : str
+        The work directory of the experiment. The code expects the configuration file to be present in the directory.
+    learning_rate : float
+        The learning rate for the supervised classification training, which is the Behaviour Cloning.
+    batch_size : int
+        The batch size for the supervised training.
+    l2 : float
+        The L2 regularization strength for the supervised training.
+    """
+    # delay the imports in the function to speedup the startup
     import json, sys
     from ppo_mario.imitation import BehaviorCloning
     from ppo_mario import TrainConfiguration

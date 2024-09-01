@@ -4,6 +4,19 @@ from time import time
 
 
 def run(model_file: Path, frame_skip: int, blur: bool = False):
+    """
+    Run the render function with the given model and configuration to render the gameplay for further inspection.
+
+    Parameters
+    ----------
+    model_file : Path
+        The path to the model file, usually the `model.zip` in the work directory.
+    frame_skip : int
+        The frame skipping value to render the gameplay.
+    blue : bool
+        Whether to apply the blur filter to the attention map.
+    """
+
     # delay the import to speedup the startup
     import ppo_mario
     import numpy as np

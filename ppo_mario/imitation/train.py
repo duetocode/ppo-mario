@@ -20,6 +20,7 @@ from .misc import DummyEnv
 
 
 class BehaviorCloning:
+    """The Behaviour Cloning training"""
 
     def __init__(
         self,

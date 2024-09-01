@@ -6,6 +6,7 @@ import numpy as np
 
 
 class ObservationClip(ObservationWrapper):
+    """Wrapper that clips the observation to hide to top part of the screen, which contains the timers and the score. These are irrelevant information that may interfere the training."""
 
     def __init__(self, env: Env, top: int = 0, left: int = 0):
         super().__init__(env)

@@ -13,7 +13,17 @@ from .model import create_model
 
 
 def train(work_dir: WorkDir, n_envs: int = None):
-    """Train the model within the given work directory"""
+    """
+    Train the model within the given work directory
+
+    Parameters
+    ----------
+    work_dir : WorkDir
+        The working directory
+    n_envs : int, optional
+        The number of environments to use for parallel rollout. If not given, it will
+        use the number of CPUs available in the system.
+    """
 
     # check the work directory first
     if not (

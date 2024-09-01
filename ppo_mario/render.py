@@ -31,12 +31,24 @@ def render(
     n_frame_skipping: int,
     cfg: TrainConfiguration,
     blur: bool = False,
-    with_attention: bool = False,
 ) -> int:
     """
     Render a gameplay episode with the given model and output to the specified file.
 
-    returns
+    Parameters
+    ----------
+    model : PPO
+        The model that will be used to play the game.
+    output_file : str | Path
+        The recorded video file.
+    n_frame_skipping : int
+        The number of frames to skip for each action.
+    cfg : TrainConfiguration
+        The configuration, usually loaded from the work directory.
+    blur : bool
+        Whether to apply a blur filter to the attention map if available.
+
+    Returns
     -------
     int
         The number of frames rendered.

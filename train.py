@@ -8,6 +8,16 @@ DEFAULT_CFG_FILE = "config.json"
 
 
 def create_work_directory(work_dir: WorkDir, args):
+    """
+    Train the model with the work directory for the experiment.
+
+    Parameters
+    ----------
+    work_dir : WorkDir
+        The work directory for the experiment.
+    args : argparse.Namespace
+        The command line arguments.
+    """
     if work_dir.root.exists():
         print("The work directory already exists.", file=sys.stderr)
         sys.exit(-1)
@@ -85,6 +95,7 @@ if __name__ == "__main__":
 
     work_dir = WorkDir(args.work_dir)
 
+    # decide to run the training or create the work directory
     if args.create:
         create_work_directory(work_dir, args)
     else:

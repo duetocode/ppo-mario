@@ -1,3 +1,4 @@
+from gymnasium import Env
 from gymnasium.wrappers import (
     GrayScaleObservation,
     ResizeObservation,
@@ -17,7 +18,29 @@ def create_env(
     with_mario_reward: bool = True,
     level: tuple = (4, 1),
     reward_params: dict = {},
-):
+) -> Env:
+    """
+    Create the environment for the gameplay.
+
+    Parameters
+    ----------
+    with_frame_skip : bool
+        Whether to skip frames.
+    with_random_frame_skip : bool
+        Whether to skip frames randomly to add more randomness.
+    with_random_episode : bool
+        Whether to use random episodes from the save states of the expert data.
+    with_mario_reward : bool
+        Whether to use the custom reward scheme.
+    level : tuple
+        The level to play.
+    reward_params : dict
+        The parameter for the reward scheme.
+
+    Return
+    ------
+    The `Env` object created with the specified configurations.
+    """
     # the basic environment creation
     env = gym_super_mario_bros.make(
         "SuperMarioBros-v0", target=level, render_mode="rgb_array"

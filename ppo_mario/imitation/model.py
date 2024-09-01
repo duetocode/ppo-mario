@@ -9,6 +9,7 @@ from ppo_mario.networks import ResNetFeatureExtractor
 def create_model(
     env: Env | VecEnv | None = None, device: str | None = None
 ) -> Tuple[PPO, TrainConfiguration]:
+    """Create new model based on configuration for the behaviour cloning."""
     cfg = TrainConfiguration(
         batch_size=128,
         n_steps=2048,

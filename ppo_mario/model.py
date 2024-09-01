@@ -3,6 +3,7 @@ from pathlib import Path
 import torch
 from stable_baselines3 import PPO
 
+from ppo_mario.misc import get_device
 from ppo_mario.networks.feature_extractor import AttentionCNN, ResNetFeatureExtractor
 
 from .config import TrainConfiguration
@@ -12,13 +13,29 @@ from stable_baselines3.ppo import CnnPolicy
 
 
 def set_freeze(model: torch.nn.Module, freeze: bool):
-    """Set the requires_grad attribute of the model."""
+    """
+    Set the requires_grad attribute of the model.
+
+    Parameters:
+    -----------
+    model : torch.nn.Module
+        The model to configure
+    freeze : bool
+        The intended freeze status for the model
+    """
     for param in model.parameters():
         param.requires_grad = not freeze
 
 
 def generate_model_cfg(cfg: TrainConfiguration) -> dict:
-    """Create the parameters for the PPO constructor call."""
+    """
+    Create the parameters for the PPO constructor call.
+
+    Parameters
+    ----------
+    cfg : TrainConfiguration
+        The configuration, usually loaded from the work directory.
+    """
     ppo_cfg = cfg.ppo_cfg
 
     # convert the `policy_kwargs.feature_extractor_class` to the actual class
@@ -45,14 +62,21 @@ def generate_model_cfg(cfg: TrainConfiguration) -> dict:
 def create_model(
     cfg: TrainConfiguration, base_model: Path | None = None, env: Env | VecEnv = None
 ) -> PPO:
-    """Load the model from the given path."""
+    """
+    Load the model from the given path.
 
-    if torch.backends.mps.is_available():
-        device = "mps"
-    elif torch.cuda.is_available():
-        device = "cuda"
-    else:
-        device = "cpu"
+    Parameters
+    ----------
+    cfg : TrainConfiguration
+        The configuration, usually loaded from the work directory.
+    base_model : Path | None
+        The path to the base model. If given, load from the file instead of initializing a new model with random parameters.
+    env : Env | VecEnv
+        The environment to use for the model. The function infers observation space and action space from the environment object.
+    """
+
+    # select the best device available
+    device = get_device()
     print(f"Device:", device)
 
     if base_model and base_model.exists():
@@ -75,10 +99,12 @@ def create_model(
         )
         print("[Model] Created a new model.")
 
+    # freeze the actor-related modules according to the configuration
     set_freeze(model.policy.pi_features_extractor, cfg.freeze_actor)
     set_freeze(model.policy.vf_features_extractor, cfg.freeze_actor)
     set_freeze(model.policy.mlp_extractor.policy_net, cfg.freeze_actor)
     set_freeze(model.policy.action_net, cfg.freeze_actor)
+    # output for debugging
     print("Actor frozen:", cfg.freeze_actor)
     print(
         "Check requires_grad:",

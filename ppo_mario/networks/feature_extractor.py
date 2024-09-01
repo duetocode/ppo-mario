@@ -8,6 +8,7 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 
 class ResNetFeatureExtractor(BaseFeaturesExtractor):
+    """A custom features extractor for the PPO model, which uses the CBAM method that combines ResNet blocks with gated attention layers"""
 
     def __init__(self, observation_space: Box, features_dim: int = 64):
         super().__init__(observation_space, features_dim)
